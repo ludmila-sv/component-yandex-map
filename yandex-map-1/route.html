@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="EN">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Route Constructor</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+</head>
+
+<body>
+
+
+
+
+<div class="container">
+	<div class="row">
+		<div class="col-lg-12">
+			<h1>Delivery Cost Calculator</h1>
+			<div id="map" style="width:100%; height:400px"></div>
+			<form method="post" action="#" id="route_form">
+				<label for="city1">FROM city:</label> <input type="text" name="city1" id="city1"><br><br>
+				<label for="city2">TO city:</label> <input type="text" name="city2" id="city2"><br><br>
+				<button type="submit">Draw Route</button>
+			</form>
+			<div id="map_result"></div>
+		</div>
+	</div><!-- /row -->
+</div>
+
+<script src="https://api-maps.yandex.ru/2.1/?lang=EN&apikey=99815524-3452-4fe2-8ec4-3e6ce649ec01"></script>
+<script src="https://geocode-maps.yandex.ru/1.x/?lang=EN&apikey=99815524-3452-4fe2-8ec4-3e6ce649ec01"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+<script type="text/javascript">
+$(function(){
+
+var myMap;
+var current_route, route;
+var route_color = 'cc4609ff';// ff - opacity
+
+ymaps.ready(init);
+
+function init() {
+	var moscow_lat = 55.58446640485473;
+	var moscow_lon = 37.385470500000004;
+
+    myMap = new ymaps.Map('map', {
+            center: [moscow_lat,moscow_lon],
+			controls:[],
+            zoom: 7
+        });
+	myMap.behaviors.disable('scrollZoom');
+	if($(document).width()<768) myMap.behaviors.disable('drag');
+
+}
+
+
+// строим маршрут
+$('#route_form').submit(function(event){
+	event.preventDefault();
+
+	var city1 = $('#city1').val();
+	var city2 = $('#city2').val();
+	var arr_points = [];
+
+	arr_points[0] = {
+				type: "wayPoint",
+				point: city1
+			};
+	arr_points[1] = {
+				type: "wayPoint",
+				point: city2
+			};
+
+	route = ymaps.route(arr_points,
+		{mapStateAutoApply: true}
+		).then(
+			function(route){
+				current_route && myMap.geoObjects.remove(current_route);
+                myMap.geoObjects.add(current_route=route);
+
+				route.getPaths().options.set({
+					 strokeColor: route_color,
+					 strokeWidth: 4,
+					 opacity: 0.9
+				 });
+				var points = route.getWayPoints();
+				points.options.set('preset', 'islands#darkBlueStretchyIcon');
+				points.get(0).properties.set('iconContent', city1);
+				points.get(1).properties.set('iconContent', city2);
+
+				$('#map_result').html( '<p>Distance <span>'+(route.getLength()/1000).toFixed(1)+'</span> km, estimated time <span>'+route.getHumanTime()+'</span>, delivery cost $<span>'+(route.getLength()/1000).toFixed(1)*5+'</span></p>');
+
+			},
+			function (error) {
+				console.log("Error: " + error.message);
+			}
+		);
+});
+
+
+});
+</script>
+
+
+    </body>
+</html>
